@@ -1,15 +1,45 @@
+import { useState, useEffect } from 'react'
+import { Auth, Hub } from 'aws-amplify'
+import Link from 'next/link'
+
 import '../configureAmplify'
 import '../styles/globals.css'
 
-import Link from 'next/link'
-
 function MyApp({ Component, pageProps }) {
+  const [signedInUser, setSignedInUser] = useState(false)
+
+  useEffect(() => {
+    authListener()
+  })
+
+  async function authListener() {
+    Hub.listen('auth', (data) => {
+      switch (data.payload.event) {
+        case 'signIn':
+          return setSignedInUser(true)
+        case 'signOut':
+          return setSignedInUser(false)
+      }
+    })
+    try {
+      await Auth.currentAuthenticatedUser()
+      setSignedInUser(true)
+    } catch (err) {}
+  }
+
   return (
   <div>
     <nav className="p-6 border-b border-gray-300">
       <Link href="/">
         <span className="mr-6 cursor-pointer">Home</span>
       </Link>
+      {
+        signedInUser && (
+          <Link href="/my-posts">
+            <span className="mr-6 cursor-pointer">My Posts</span>
+          </Link>
+        )
+      }
       <Link href="/create-post">
         <span className="mr-6 cursor-pointer">Create Post</span>
       </Link>
